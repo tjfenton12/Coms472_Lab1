@@ -33,7 +33,7 @@ public class WebSearch
     static final boolean DEBUGGING = false; // When set, report what's happening.
     // WARNING: lots of info is printed.
 
-    static int beamWidth = 2; // If searchStrategy = "beam",
+    static int beamWidth = 20; // If searchStrategy = "beam",
     // limit the size of OPEN to this value.
     // The setSize() method in the Vector
     // class can be used to accomplish this.
@@ -44,6 +44,8 @@ public class WebSearch
     // the following string.
     static final String GOAL_PATTERN   = "QUERY1 QUERY2 QUERY3 QUERY4";
 
+    public static String globalDirectoryName;
+
     public static void main(String args[])
     {
         if (args.length != 2)
@@ -53,6 +55,7 @@ public class WebSearch
         else
         {
             String directoryName = args[0]; // Read the search strategy to use.
+            globalDirectoryName = args[0]; //Because I'm lazy
             String searchStrategyName = args[1]; // Read the search strategy to use.
 
             if (searchStrategyName.equalsIgnoreCase("breadth") ||
@@ -128,14 +131,14 @@ public class WebSearch
         // Be sure to read about them in some Java documentation.
         // They are useful when one wants to break up a string into words (tokens).
         StringTokenizer st = new StringTokenizer(contents);
-
+        int beams = 0;
         while (st.hasMoreTokens())
         {
             String token = st.nextToken();
 
             // Look for the hyperlinks on the current page.
 
-            // (Lots a print statments and error checks are in here,
+            // (Lots of print statments and error checks are in here,
             // both as a form of documentation and as a debugging tool should you
             // create your own intranets.)
 
@@ -211,6 +214,51 @@ public class WebSearch
                     // hyperlink) and "contents" (ie, the full text of the current page).
                     //////////////////////////////////////////////////////////////////////
 
+                    if(searchStrategy.equals("DEPTH")) {
+                        SearchNode child = new SearchNode(hyperlink);
+                        child.setParent(parent);
+                        OPEN.addFirst(child);
+                    } else if (searchStrategy.equals("BREADTH")) {
+                        SearchNode child = new SearchNode(hyperlink);
+                        child.setParent(parent);
+                        OPEN.addLast(child);
+                    } else if (searchStrategy.equals("BEAM")) {
+                        SearchNode child = new SearchNode(hyperlink);
+                        child.setParent(parent);
+                        child.setHeuristic(contents, hypertext, globalDirectoryName);
+                        int i = 0;
+                        //Lazy sort
+                        if (OPEN.isEmpty()) {
+                            OPEN.add(child);
+                        } else {
+                            for (SearchNode sn : OPEN) {
+                                if (sn.getHeuristic() < child.getHeuristic()) {
+                                    if (beams < beamWidth) {
+                                        OPEN.add(i, child);
+                                        beams++;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } else if (searchStrategy.equals("BEST")) {
+                        SearchNode child = new SearchNode(hyperlink);
+                        child.setParent(parent);
+                        child.setHeuristic(contents, hypertext, globalDirectoryName);
+                        int i = 0;
+                        //Lazy sort
+                        if (OPEN.isEmpty()) {
+                            OPEN.add(child);
+                        } else {
+                            for (SearchNode sn : OPEN) {
+                                if (sn.getHeuristic() < child.getHeuristic()) {
+                                    OPEN.add(i, child);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     // Technical note: in best-first search,
                     // if a page contains TWO (or more) links to the SAME page,
                     // it is acceptable if only the FIRST one is inserted into OPEN,
@@ -282,16 +330,67 @@ public class WebSearch
 // from the start node to the current node represented by the SearchNode instance.
 class SearchNode
 {
+    private SearchNode parent;
+    private int heuristic;
     final String nodeName;
+
     public SearchNode(String name) {
         nodeName = name;
     }
 
     public void reportSolutionPath() {
+        recursiveReportSolutionPath(this);
     }
 
     public String getNodeName() {
         return nodeName;
+    }
+
+    public SearchNode getParent() {
+        return this.parent;
+    }
+
+    public void setParent(SearchNode parent) {
+        this.parent = parent;
+    }
+
+    private static void recursiveReportSolutionPath(SearchNode goal) {
+        System.out.print(goal.getNodeName() + " ");
+        if(goal.getParent() != null) {
+            recursiveReportSolutionPath(goal.getParent());
+        }
+    }
+
+    public void setHeuristic(String contents, String hypertext, String globalDirectoryName) {
+        String child_contents;
+        child_contents = Utilities.getFileContents(globalDirectoryName
+                + File.separator
+                + this.getNodeName());
+        StringTokenizer st = new StringTokenizer(child_contents);
+        while (st.hasMoreTokens()) {
+            String token = st.nextToken();
+            if(token.contains("QUERY")) {
+                this.heuristic ++;
+            }
+        }
+        StringTokenizer hst = new StringTokenizer(hypertext);
+        while (hst.hasMoreTokens()) {
+            String token = hst.nextToken();
+            if(token.contains("QUERY")) {
+                this.heuristic ++;
+            }
+        }
+        if(hypertext.contains("Query1 Query2 Query3")) {
+            this.heuristic += 3;
+        } else if (hypertext.contains("Query1 Query2")) {
+            this.heuristic += 2;
+        } else if (hypertext.contains("Query1")) {
+            this.heuristic += 1;
+        }
+    }
+
+    public int getHeuristic() {
+        return this.heuristic;
     }
 }
 

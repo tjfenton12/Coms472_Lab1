@@ -1,0 +1,39 @@
+Question a
+The heuristic function I've devised is a linear combination of the three bullets of information provided in the lab
+document. Because there seems to be no indication of scaling between each bullet
+    - The more QUERY words on a page, the more likely the links on that page lead to the goal node
+    - The more QUERY words in the hypertext associated with a hyperlink, the more likely that hyperlink leads to the
+        goal node
+    - The more consecutive and in numerical order QUERY words there are in a hyperlink, the more likely that hyperlink
+        leads to the goal node
+
+A) Each QUERY word on a page will award the heuristic one point.
+B) Each QUERY word in a hyperlink will award the heuristic one point.
+C) A hyperlink with "Query1 Query2 Query3" in the hyperlink will award the heuristic three points.
+D) A hyperlink with "Query1 Query2" in the hyperlink will award the heuristic two points.
+E) A hyperlink with "Query1" in the hyperlink will award the heuristic one point.
+
+The heuristic for each outgoing edge shall be the sum of the above rules, evaluated in order A -> E.
+
+This heuristic is not admissible, as the heuristic value could become larger than the distance from the current node
+to the goal node.
+
+Question b
+Done.
+
+Question c
+My heuristic function worked particularly well. With the required beam width of 20, my algorithm found a goal node
+    9 nodes - intranet1
+    17 nodes - intranet5
+    11 nodes - intranet7
+Using the beam search method. It performed the same when using best search as well, probably due to the beam width set
+to 20.
+On a standard breadth first search, it traversed
+    91 nodes - intranet1
+    88 nodes - intranet5
+    56 nodes - intranet7.
+On a standard depth first search, it traversed
+    58 nodes - intranet1
+    42 nodes - intranet5
+    12 nodes - intranet7.
+It is on that basis that I have concluded that my heuristic function has performed particularly well.
